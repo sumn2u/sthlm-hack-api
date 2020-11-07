@@ -87,10 +87,7 @@
         console.log(mymap);
         L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png').addTo(mymap);
         var control = L.Routing.control({
-            waypoints: [
-                L.latLng(38.7436056, -9.2304153),
-                L.latLng(38.5334477, -0.1312811)
-            ],
+            waypoints: [],
             router: new L.Routing.osrmv1({
                 language: 'en',
                 profile: 'car'
