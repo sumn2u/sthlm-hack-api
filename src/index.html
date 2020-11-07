@@ -103,7 +103,7 @@
         control.on('routesfound', function(e) {
             var routes = e.routes;
             var summary = routes[0].summary;
-            var distance = summary.totalDistance;
+            var distance = Math.ceil((summary.totalDistance / 1000) * 0.62137);
             var waypoints = e.waypoints;
             callWs(distance, 'taxi-carbon')
             calculateBus(waypoints)
@@ -126,7 +126,7 @@
                 "userid": 1,
                 "id": "0"
             }
-            fetch('http://localhost:8080/api/facets/0', {
+            fetch('http://katiparxa.com:8080/api/facets/0', {
                 method: 'PUT',
                 headers: {
                     'Accept': 'application/json',
