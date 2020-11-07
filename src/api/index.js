@@ -3,6 +3,8 @@ import { response, Router } from 'express';
 import { carbonFootprint } from 'trip-to-carbon-xyz';
 import "core-js/stable";
 import "regenerator-runtime/runtime";
+import facets from './facets';
+
 const calculateFootPrint = async(req, res, next) => {
     let footPrint;
     const { amount, mode} = req.query;
@@ -28,12 +30,14 @@ const calculateFootPrint = async(req, res, next) => {
 }
 
 
-export default () => {
+export default (config, db) => {
     let api = Router();
 
     api.get('/calculate', calculateFootPrint, (req, res) => {
         res.json(res.footPrint);
     });
+
+    api.use('/facets', facets({ config, db }));
 
     // perhaps expose some API metadata at the root
     api.get('/', (req, res) => {

@@ -10,6 +10,7 @@ import config from './config.json';
 import "core-js/stable";
 import "regenerator-runtime/runtime";
 let app = express();
+var path = require("path");
 app.server = http.createServer(app);
 
 // logger
@@ -29,7 +30,11 @@ initializeDb( db => {
 
 	// internal middleware
 	app.use(middleware({ config, db }));
+  
 
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname + '/index.html'));
+})
 	// api router
 	app.use('/api', api({ config, db }));
 

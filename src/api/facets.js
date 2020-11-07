@@ -34,9 +34,11 @@ export default ({ config, db }) => resource({
 
 	/** PUT /:id - Update a given entity */
 	update({ facet, body }, res) {
+    const updatedAmount = facet['co2reduced'] + body['co2reduced'];
 		for (let key in body) {
 			if (key!=='id') {
 				facet[key] = body[key];
+        facet['co2reduced'] = updatedAmount;
 			}
 		}
 		res.sendStatus(204);

@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A==" crossorigin="" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/perliedman-leaflet-control-geocoder/1.5.5/Control.Geocoder.min.css" />
+
+    <!-- Make sure you put this AFTER Leaflet's CSS -->
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js" integrity="sha512-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44cWnUrBc8PkAOcXy20w0vlaXaVUearIOBhiXZ5V3ynxwA==" crossorigin=""></script>
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/perliedman-leaflet-control-geocoder/1.13.0/Control.Geocoder.min.js"></script>
+    <style>
+        #footer {
+            position: absolute;
+            bottom: 0;
+            width: 300px;
+            right: 0;
+            height: 2.5rem;
+            z-index: 999;
+            margin-bottom: 8vh;
+            /* Footer height */
+        }
+        
+        .flex-container {
+            /* We first create a flex layout context */
+            display: flex;
+            /* Then we define the flow direction 
+     and if we allow the items to wrap 
+   * Remember this is the same as:
+   * flex-direction: row;
+   * flex-wrap: wrap;
+   */
+            flex-flow: row wrap;
+            /* Then we define how is distributed the remaining space */
+            justify-content: space-around;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+        
+        .flex-item {
+            background: #9a8883;
+            padding: 3px;
+            width: 70px;
+            height: 50px;
+            margin-top: 10px;
+            line-height: 14px;
+            color: white;
+            font-weight: bold;
+            font-size: 1em;
+            text-align: center;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div style="height:100vh" id="mapid">
+        <div id="footer">
+            <ul class="flex-container">
+                <li class="flex-item">
+
+                    <img src="https://images.unsplash.com/photo-1489824904134-891ab64532f1?fit=crop&w=60&q=60" />
+                    <span id="taxi-carbon" data-consumption="0" data-saved="0">0kg</span>
+                </li>
+                <li class="flex-item">
+                    <img src="https://images.unsplash.com/photo-1573505820103-bdca39cc6ddc?fit=crop&w=50&q=60" />
+                    <span id="bike-carbon" data-consumption="0" data-saved="0">0kg</span>
+                </li>
+                <li class="flex-item">
+
+                    <img src="https://images.unsplash.com/photo-1585119192304-5f4ae7af29ff?fit=crop&w=50&q=60" />
+                    <span id="bus-carbon" data-consumption="0" data-saved="0">0kg</span>
+                </li>
+
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        var mymap = L.map('mapid').setView([50.27264, 7.26469], 13);
+        console.log(mymap);
+        L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png').addTo(mymap);
+        var control = L.Routing.control({
+            waypoints: [
+                L.latLng(38.7436056, -9.2304153),
+                L.latLng(38.5334477, -0.1312811)
+            ],
+            router: new L.Routing.osrmv1({
+                language: 'en',
+                profile: 'car'
+            }),
+            lineOptions: {
+                addWaypoints: false
+            },
+            geocoder: L.Control.Geocoder.nominatim({})
+        }).addTo(mymap).on('routing:edit-end', function(e) {
+
+        })
+
+        control.on('routesfound', function(e) {
+            var routes = e.routes;
+            var summary = routes[0].summary;
+            var distance = summary.totalDistance;
+            var waypoints = e.waypoints;
+            callWs(distance, 'taxi-carbon')
+            calculateBus(waypoints)
+        });
+
+        addClickEventListener(document.getElementsByClassName('flex-item'), preserveAnswer);
+
+        function addClickEventListener(elements, event) {
+            for (var i = 0; i < elements.length; i++) {
+                elements[i].addEventListener('click', event, true);
+            }
+        }
+
+        function preserveAnswer(e) {
+            e.preventDefault();
+            var savedAmount = parseInt(e.target.parentNode.querySelector('span').getAttribute('data-saved'));
+            const opts = {
+                "username": "Suman",
+                "co2reduced": savedAmount,
+                "userid": 1,
+                "id": "0"
+            }
+            fetch('http://localhost:8080/api/facets/0', {
+                method: 'PUT',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(opts)
+            }).then(function(response) {
+                return response.json();
+            }).then(function(data) {
+                ChromeSamples.log('Created Gist:', data.html_url);
+            });
+        }
+
+        function calculateBus(wayPoints, mode) {
+            var controlBus = L.Routing.control({
+                waypoints: wayPoints,
+                router: new L.Routing.osrmv1({
+                    language: 'en',
+                    profile: 'bus'
+                }),
+                lineOptions: {
+                    addWaypoints: false
+                },
+                show: false,
+                geocoder: L.Control.Geocoder.nominatim({})
+            }).addTo(mymap);
+
+
+            controlBus.on('routesfound', function(e) {
+                var routes = e.routes;
+                var summary = routes[0].summary;
+                var distance = Math.ceil((summary.totalDistance / 1000) * 0.62137);
+                callWs(distance, 'bus-carbon')
+                if (document.getElementsByClassName('leaflet-routing-container')) document.getElementsByClassName('leaflet-routing-container')[1].remove()
+            });
+        }
+
+        callWs = function(distance, modeSelector) {
+            // The Endpoint URL
+            // return false;
+            var mode = modeSelector.split('-')[0]
+            var url = 'http://katiparxa.com:8080/api/calculate?amount=' + distance + '&mode=' + mode;
+            fetch(url)
+                .then(function(response) {
+                    // Render the Response Status
+                    // document.getElementById(modeSelector).innerHTML = response.status;
+                    // Parse the body as JSON
+                    return response.json();
+                })
+                .then(function(consumption) {
+                    // Render the parsed body
+                    document.getElementById(modeSelector).innerHTML = consumption + 'kg';
+                    //data-consumption="0" data-saved="0"
+                    document.getElementById(modeSelector).setAttribute('data-consumption', consumption);
+                    if (mode === 'bus') {
+                        var carConsumption = document.getElementById('taxi-carbon').getAttribute('data-consumption'),
+                            busConsumption = document.getElementById('bus-carbon').getAttribute('data-consumption');
+                        document.getElementById('bus-carbon').setAttribute('data-saved', (carConsumption - busConsumption));
+                        document.getElementById('taxi-carbon').setAttribute('data-saved', 0);
+                        document.getElementById('bike-carbon').setAttribute('data-saved', carConsumption);
+                        // var carConsumption - busConsumption)
+                    }
+                })
+        }
+    </script>
+</body>
+
+</html>
