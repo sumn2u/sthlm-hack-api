@@ -1,7 +1,8 @@
 import { version } from '../../package.json';
 import { response, Router } from 'express';
 import { carbonFootprint } from 'trip-to-carbon-xyz';
-
+import "core-js/stable";
+import "regenerator-runtime/runtime";
 const calculateFootPrint = async(req, res, next) => {
     let footPrint;
     const { amount, mode} = req.query;
