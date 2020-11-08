@@ -121,10 +121,8 @@
             e.preventDefault();
             var savedAmount = parseInt(e.target.parentNode.querySelector('span').getAttribute('data-saved'));
             const opts = {
-                "username": "Suman",
                 "co2reduced": savedAmount,
                 "userid": 1,
-                "id": "0"
             }
             fetch('http://katiparxa.com:8080/api/facets/0', {
                 method: 'PUT',
